@@ -15,26 +15,41 @@ export default function App() {
         <Tab.Navigator
           screenOptions={({ route }) => ({
             tabBarIcon: ({ color, size }) => {
-              let iconName;
-
-              if (route.name === 'Câmera') {
-                iconName = 'camera';
-              } else if (route.name === 'Linha do Tempo') {
-                iconName = 'picture';
-              }
-
+              const iconName = route.name === 'Câmera' ? 'camera' : 'picture';
               return <AntDesign name={iconName} size={size} color={color} />;
             },
-            tabBarActiveTintColor: 'red',
-            tabBarInactiveTintColor: 'gray',
+            tabBarActiveTintColor: '#E53935',
+            tabBarInactiveTintColor: '#888',
+            tabBarStyle: {
+              backgroundColor: '#111',
+              borderTopWidth: 0,
+              elevation: 10,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -3 },
+              shadowOpacity: 0.4,
+              shadowRadius: 6,
+              height: 64,
+              paddingBottom: 10,
+              paddingTop: 6,
+            },
+            tabBarLabelStyle: {
+              fontSize: 12,
+              fontWeight: '600',
+            },
             headerShown: false,
           })}
         >
           <Tab.Screen name="Câmera" component={CameraScreen} />
-          <Tab.Screen 
-            name="Linha do Tempo" 
-            component={TimelineScreen} 
-            options={{ headerShown: true }} 
+          <Tab.Screen
+            name="Linha do Tempo"
+            component={TimelineScreen}
+            options={{
+              headerShown: true,
+              headerStyle: { backgroundColor: '#111' },
+              headerTintColor: '#fff',
+              headerTitleStyle: { fontWeight: 'bold', fontSize: 18 },
+              headerShadowVisible: false,
+            }}
           />
         </Tab.Navigator>
       </NavigationContainer>
