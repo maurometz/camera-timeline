@@ -89,6 +89,7 @@ export default function TimelineScreen() {
         )}
       </View>
     </TouchableOpacity>
+    
   );
 
   if (loading && entries.length === 0) {
