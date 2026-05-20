@@ -8,12 +8,25 @@ import { decode } from 'base64-arraybuffer';
 
 export default function CameraScreen({ navigation }) {
   const [uploading, setUploading] = useState(false);
+  const [flashMode, setFlashMode] = useState('auto');
   const cameraRef = useRef();
   const [permission, requestCameraPermission] = useCameraPermissions();
 
   useEffect(() => {
     requestCameraPermission();
   }, []);
+
+  const toggleFlashMode = () => {
+    if (flashMode === 'auto') setFlashMode('on');
+    else if (flashMode === 'on') setFlashMode('off');
+    else setFlashMode('auto');
+  };
+
+  const getFlashIconColor = () => {
+    if (flashMode === 'on') return '#FFD700';
+    if (flashMode === 'off') return '#888';
+    return '#fff';
+  };
 
   async function uploadImageToSupabase(uri) {
     try {
@@ -71,7 +84,15 @@ export default function CameraScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <CameraView ref={cameraRef} style={styles.camera} facing="back" />
+      <CameraView ref={cameraRef} style={styles.camera} facing="back" flashMode={flashMode} />
+
+      <TouchableOpacity
+        style={styles.flashButton}
+        onPress={toggleFlashMode}
+        activeOpacity={0.7}
+      >
+        <AntDesign name="flashlight" size={24} color={getFlashIconColor()} />
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={[styles.obturador, uploading && styles.obturadorDisabled]}
@@ -102,6 +123,18 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
     width: '100%',
+  },
+  flashButton: {
+    position: 'absolute',
+    top: 48,
+    right: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
   },
   obturador: {
     position: 'absolute',
