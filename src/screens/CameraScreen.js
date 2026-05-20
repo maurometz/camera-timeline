@@ -79,7 +79,9 @@ export default function CameraScreen({ navigation }) {
         disabled={uploading}
         activeOpacity={0.7}
       >
-        <View style={styles.obturadorInner} />
+        <View style={styles.cameraBody}>
+          <View style={styles.cameraLens} />
+        </View>
       </TouchableOpacity>
 
       {uploading && (
@@ -117,11 +119,22 @@ const styles = StyleSheet.create({
   obturadorDisabled: {
     opacity: 0.4,
   },
-  obturadorInner: {
+  cameraBody: {
     width: 62,
     height: 62,
     borderRadius: 31,
     backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  cameraLens: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#111',
+    borderWidth: 3,
+    borderColor: '#fff',
   },
   loadingOverlay: {
     position: 'absolute',

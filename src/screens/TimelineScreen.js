@@ -76,18 +76,15 @@ export default function TimelineScreen() {
     try {
       setSaving(true);
       
-      // Extract filename from image_url
       const urlParts = selectedEntry.image_url.split('/');
       const filePath = urlParts[urlParts.length - 1];
       
-      // Delete from storage
       const { error: storageError } = await supabase.storage
         .from('fotos_timeline')
         .remove([filePath]);
 
       if (storageError) throw storageError;
 
-      // Delete from database
       const { error: dbError } = await supabase
         .from('timeline_entries')
         .delete()
@@ -95,7 +92,6 @@ export default function TimelineScreen() {
 
       if (dbError) throw dbError;
 
-      // Update entries list
       setEntries(prev => prev.filter(item => item.id !== selectedEntry.id));
       closeModal();
       alert('Foto deletada com sucesso!');
@@ -248,38 +244,36 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   listEmpty: {
-    flex: 1,
-    justifyContent: 'center',
+   flex: 1,
+   justifyContent: 'center',
   },
 
-  // Empty state
   emptyContainer: {
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 40,
+   alignItems: 'center',
+   gap: 12,
+   paddingVertical: 40,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#444',
+   fontSize: 20,
+   fontWeight: 'bold',
+   color: '#444',
   },
   emptyText: {
-    fontSize: 15,
-    color: '#999',
-    textAlign: 'center',
+   fontSize: 15,
+   color: '#999',
+   textAlign: 'center',
   },
 
-  // Card
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 16,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
+   backgroundColor: '#fff',
+   borderRadius: 12,
+   marginBottom: 16,
+   overflow: 'hidden',
+   elevation: 3,
+   shadowColor: '#000',
+   shadowOffset: { width: 0, height: 2 },
+   shadowOpacity: 0.08,
+   shadowRadius: 6,
   },
   image: {
     width: '100%',
@@ -305,7 +299,6 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 
-  // Modal
   modalContainer: {
     flex: 1,
     backgroundColor: '#111',
