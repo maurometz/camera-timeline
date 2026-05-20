@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Image, TouchableOpacity,
-  Modal, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform,
+  Modal, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { supabase } from '../lib/supabase';
@@ -68,6 +68,62 @@ export default function TimelineScreen() {
       alert('Erro ao salvar descrição.');
     }
     setSaving(false);
+  };
+
+  const deleteTimelineEntry = async () => {
+    if (!selectedEntry) return;
+    
+    try {
+      setSaving(true);
+      
+      // Extract filename from image_url
+      const urlParts = selectedEntry.image_url.split('/');
+      const filePath = urlParts[urlParts.length - 1];
+      
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('fotos_timeline')
+        .remove([filePath]);
+
+      if (storageError) throw storageError;
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('timeline_entries')
+        .delete()
+        .eq('id', selectedEntry.id);
+
+      if (dbError) throw dbError;
+
+      // Update entries list
+      setEntries(prev => prev.filter(item => item.id !== selectedEntry.id));
+      closeModal();
+      alert('Foto deletada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao deletar foto:', error);
+      alert('Erro ao deletar a foto. Tente novamente.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeletePress = () => {
+    Alert.alert(
+      'Deletar foto',
+      'Tem certeza que deseja deletar esta foto? Esta ação não pode ser desfeita.',
+      [
+        {
+          text: 'Cancelar',
+          onPress: () => {},
+          style: 'cancel',
+        },
+        {
+          text: 'Deletar',
+          onPress: deleteTimelineEntry,
+          style: 'destructive',
+        },
+      ]
+    );
   };
 
   const formatDate = (dateStr) => {
@@ -156,6 +212,15 @@ export default function TimelineScreen() {
                     ? <ActivityIndicator color="#fff" size="small" />
                     : <Text style={styles.saveButtonText}>Salvar descrição</Text>
                   }
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.deleteButton, saving && styles.deleteButtonDisabled]}
+                  onPress={handleDeletePress}
+                  disabled={saving}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.deleteButtonText}>Deletar foto</Text>
                 </TouchableOpacity>
               </View>
             </>
@@ -295,6 +360,23 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  deleteButton: {
+    backgroundColor: '#E53935',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  deleteButtonDisabled: {
+    opacity: 0.6,
+  },
+  deleteButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
