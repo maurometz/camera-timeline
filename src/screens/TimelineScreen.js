@@ -1,11 +1,20 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, FlatList, Image, TouchableOpacity,
-  Modal, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert,
-} from 'react-native';
 import AntDesign from "@expo/vector-icons/AntDesign";
-import { supabase } from '../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList, Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { supabase } from '../lib/supabase';
 
 function EmptyState() {
   return (
@@ -72,13 +81,13 @@ export default function TimelineScreen() {
 
   const deleteTimelineEntry = async () => {
     if (!selectedEntry) return;
-    
+
     try {
       setSaving(true);
-      
+
       const urlParts = selectedEntry.image_url.split('/');
       const filePath = urlParts[urlParts.length - 1];
-      
+
       const { error: storageError } = await supabase.storage
         .from('fotos_timeline')
         .remove([filePath]);
@@ -110,7 +119,7 @@ export default function TimelineScreen() {
       [
         {
           text: 'Cancelar',
-          onPress: () => {},
+          onPress: () => { },
           style: 'cancel',
         },
         {
@@ -141,7 +150,7 @@ export default function TimelineScreen() {
         )}
       </View>
     </TouchableOpacity>
-    
+
   );
 
   if (loading && entries.length === 0) {
@@ -244,36 +253,36 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   listEmpty: {
-   flex: 1,
-   justifyContent: 'center',
+    flex: 1,
+    justifyContent: 'center',
   },
 
   emptyContainer: {
-   alignItems: 'center',
-   gap: 12,
-   paddingVertical: 40,
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 40,
   },
   emptyTitle: {
-   fontSize: 20,
-   fontWeight: 'bold',
-   color: '#444',
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#444',
   },
   emptyText: {
-   fontSize: 15,
-   color: '#999',
-   textAlign: 'center',
+    fontSize: 15,
+    color: '#999',
+    textAlign: 'center',
   },
 
   card: {
-   backgroundColor: '#fff',
-   borderRadius: 12,
-   marginBottom: 16,
-   overflow: 'hidden',
-   elevation: 3,
-   shadowColor: '#000',
-   shadowOffset: { width: 0, height: 2 },
-   shadowOpacity: 0.08,
-   shadowRadius: 6,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
   },
   image: {
     width: '100%',

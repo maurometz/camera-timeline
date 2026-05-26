@@ -4,7 +4,7 @@ import { decode } from 'base64-arraybuffer';
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as FileSystem from 'expo-file-system/legacy';
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { supabase } from "../lib/supabase";
 
 export default function CameraScreen({ navigation }) {
@@ -14,6 +14,7 @@ export default function CameraScreen({ navigation }) {
   const [flashIconColor, setFlashIconColor] = useState('#ff');
   const cameraRef = useRef();
   const [permission, requestCameraPermission] = useCameraPermissions();
+  const [fotoUri, setFotoUri] = useState(null);
 
   useEffect(() => {
     requestCameraPermission();
@@ -70,7 +71,8 @@ export default function CameraScreen({ navigation }) {
   async function quandoPressionaObturador() {
     if (cameraRef.current && !uploading) {
       const foto = await cameraRef.current.takePictureAsync();
-      await uploadImageToSupabase(foto.uri);
+      setFotoUri(foto.uri);
+      // await uploadImageToSupabase(foto.uri);
     }
   }
 
@@ -89,8 +91,29 @@ export default function CameraScreen({ navigation }) {
     );
   }
 
-  return (
-    <View style={styles.container}>
+  const ImagePreview = ({ fotoUri, close }) => {
+    if (!fotoUri) return null;
+
+    return <>
+      <Image
+        source={{ uri: fotoUri }}
+        style={styles.fullScreenImage}
+        resizeMode="cover"
+      />
+
+      <TouchableOpacity style={styles.closeButton} onPress={close}>
+        <Text style={styles.closeText}>X</Text>
+      </TouchableOpacity>
+    </>
+  };
+
+  return <View style={styles.container}>
+    {fotoUri ? (
+      <ImagePreview
+        fotoUri={fotoUri}
+        close={() => setFotoUri(null)}
+      />
+    ) : (<>
       <CameraView ref={cameraRef} style={styles.camera} facing="back" flashMode={flashMode} />
 
       <TouchableOpacity
@@ -122,8 +145,9 @@ export default function CameraScreen({ navigation }) {
           <Text style={styles.loadingText}>Salvando foto...</Text>
         </View>
       )}
-    </View>
-  );
+    </>
+    )}
+  </View>
 }
 
 const styles = StyleSheet.create({
@@ -227,5 +251,26 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  fullScreenImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
   },
 });
