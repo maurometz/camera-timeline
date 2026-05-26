@@ -1,14 +1,17 @@
-import { useEffect, useRef, useState } from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
-import { CameraView, useCameraPermissions } from "expo-camera";
+import { MaterialIcons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import { supabase } from "../lib/supabase";
-import * as FileSystem from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
+import { CameraView, useCameraPermissions } from "expo-camera";
+import * as FileSystem from 'expo-file-system/legacy';
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { supabase } from "../lib/supabase";
 
 export default function CameraScreen({ navigation }) {
   const [uploading, setUploading] = useState(false);
   const [flashMode, setFlashMode] = useState('auto');
+  const [flashIconName, setFlashIconName] = useState('flash-auto');
+  const [flashIconColor, setFlashIconColor] = useState('#ff');
   const cameraRef = useRef();
   const [permission, requestCameraPermission] = useCameraPermissions();
 
@@ -17,15 +20,19 @@ export default function CameraScreen({ navigation }) {
   }, []);
 
   const toggleFlashMode = () => {
-    if (flashMode === 'auto') setFlashMode('on');
-    else if (flashMode === 'on') setFlashMode('off');
-    else setFlashMode('auto');
-  };
-
-  const getFlashIconColor = () => {
-    if (flashMode === 'on') return '#FFD700';
-    if (flashMode === 'off') return '#888';
-    return '#fff';
+    if (flashMode === 'auto') {
+      setFlashMode('on');
+      setFlashIconName('flash-on');
+      setFlashIconColor('#FFD700');
+    } else if (flashMode === 'on') {
+      setFlashMode('off');
+      setFlashIconName('flash-off');
+      setFlashIconColor('#888');
+    } else {
+      setFlashMode('auto');
+      setFlashIconName('flash-auto');
+      setFlashIconColor('#fff')
+    }
   };
 
   async function uploadImageToSupabase(uri) {
@@ -91,7 +98,11 @@ export default function CameraScreen({ navigation }) {
         onPress={toggleFlashMode}
         activeOpacity={0.7}
       >
-        <AntDesign name="flashlight" size={24} color={getFlashIconColor()} />
+        <MaterialIcons
+          name={flashIconName}
+          size={24}
+          color={flashIconColor}
+        />
       </TouchableOpacity>
 
       <TouchableOpacity
