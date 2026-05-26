@@ -4,8 +4,9 @@ import { decode } from 'base64-arraybuffer';
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as FileSystem from 'expo-file-system/legacy';
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { supabase } from "../lib/supabase";
+import ImagePreview from "./ImagePreview";
 
 export default function CameraScreen({ navigation }) {
   const [uploading, setUploading] = useState(false);
@@ -70,9 +71,17 @@ export default function CameraScreen({ navigation }) {
 
   async function quandoPressionaObturador() {
     if (cameraRef.current && !uploading) {
-      const foto = await cameraRef.current.takePictureAsync();
+      const foto = await cameraRef.current.takePictureAsync({ exif: true });
       setFotoUri(foto.uri);
-      // await uploadImageToSupabase(foto.uri);
+    }
+  }
+
+  async function handleUpload() {
+    try {
+      await uploadImageToSupabase(fotoUri);
+      setFotoUri(null);
+    } catch (err) {
+      console.log("Upload failed: ", err);
     }
   }
 
@@ -91,64 +100,49 @@ export default function CameraScreen({ navigation }) {
     );
   }
 
-  const ImagePreview = ({ fotoUri, close }) => {
-    if (!fotoUri) return null;
-
-    return <>
-      <Image
-        source={{ uri: fotoUri }}
-        style={styles.fullScreenImage}
-        resizeMode="cover"
-      />
-
-      <TouchableOpacity style={styles.closeButton} onPress={close}>
-        <Text style={styles.closeText}>X</Text>
-      </TouchableOpacity>
-    </>
-  };
-
-  return <View style={styles.container}>
-    {fotoUri ? (
+  return (
+    fotoUri ? (
       <ImagePreview
         fotoUri={fotoUri}
         close={() => setFotoUri(null)}
+        confirm={handleUpload}
       />
-    ) : (<>
-      <CameraView ref={cameraRef} style={styles.camera} facing="back" flashMode={flashMode} />
+    ) : (
+      <View style={styles.container}>
+        <CameraView ref={cameraRef} style={styles.camera} facing="back" flashMode={flashMode} />
 
-      <TouchableOpacity
-        style={styles.flashButton}
-        onPress={toggleFlashMode}
-        activeOpacity={0.7}
-      >
-        <MaterialIcons
-          name={flashIconName}
-          size={24}
-          color={flashIconColor}
-        />
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.flashButton}
+          onPress={toggleFlashMode}
+          activeOpacity={0.7}
+        >
+          <MaterialIcons
+            name={flashIconName}
+            size={24}
+            color={flashIconColor}
+          />
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[styles.obturador, uploading && styles.obturadorDisabled]}
-        onPress={quandoPressionaObturador}
-        disabled={uploading}
-        activeOpacity={0.7}
-      >
-        <View style={styles.cameraBody}>
-          <View style={styles.cameraLens} />
-        </View>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.obturador, uploading && styles.obturadorDisabled]}
+          onPress={quandoPressionaObturador}
+          disabled={uploading}
+          activeOpacity={0.7}
+        >
+          <View style={styles.cameraBody}>
+            <View style={styles.cameraLens} />
+          </View>
+        </TouchableOpacity>
 
-      {uploading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={styles.loadingText}>Salvando foto...</Text>
-        </View>
-      )}
-    </>
-    )}
-  </View>
-}
+        {uploading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#fff" />
+            <Text style={styles.loadingText}>Salvando foto...</Text>
+          </View>
+        )}
+      </View>
+    ))
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -252,8 +246,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+  previewContainer: {
+    flex: 1,
+    backgroundColor: 'black',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   fullScreenImage: {
-    ...StyleSheet.absoluteFillObject,
+    // ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
   },
@@ -271,6 +271,21 @@ const styles = StyleSheet.create({
   closeText: {
     color: 'white',
     fontSize: 20,
+    fontWeight: 'bold',
+  },
+  confirmButton: {
+    position: 'absolute',
+    bottom: 50,
+    backgroundColor: '#007AFF', // Standard iOS Blue (change to match your app)
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 30,
+    alignSelf: 'center',
+    zIndex: 10,
+  },
+  confirmText: {
+    color: 'white',
+    fontSize: 18,
     fontWeight: 'bold',
   },
 });
