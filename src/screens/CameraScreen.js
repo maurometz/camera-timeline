@@ -1,31 +1,40 @@
-import { useEffect, useRef, useState } from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
-import { CameraView, useCameraPermissions } from "expo-camera";
+import { MaterialIcons } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import { supabase } from "../lib/supabase";
-import * as FileSystem from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
+import { CameraView, useCameraPermissions } from "expo-camera";
+import * as FileSystem from 'expo-file-system/legacy';
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { supabase } from "../lib/supabase";
+import ImagePreview from "./ImagePreview";
 
 export default function CameraScreen({ navigation }) {
   const [uploading, setUploading] = useState(false);
   const [flashMode, setFlashMode] = useState('auto');
+  const [flashIconName, setFlashIconName] = useState('flash-auto');
+  const [flashIconColor, setFlashIconColor] = useState('#ff');
   const cameraRef = useRef();
   const [permission, requestCameraPermission] = useCameraPermissions();
+  const [fotoUri, setFotoUri] = useState(null);
 
   useEffect(() => {
     requestCameraPermission();
   }, []);
 
   const toggleFlashMode = () => {
-    if (flashMode === 'auto') setFlashMode('on');
-    else if (flashMode === 'on') setFlashMode('off');
-    else setFlashMode('auto');
-  };
-
-  const getFlashIconColor = () => {
-    if (flashMode === 'on') return '#FFD700';
-    if (flashMode === 'off') return '#888';
-    return '#fff';
+    if (flashMode === 'auto') {
+      setFlashMode('on');
+      setFlashIconName('flash-on');
+      setFlashIconColor('#FFD700');
+    } else if (flashMode === 'on') {
+      setFlashMode('off');
+      setFlashIconName('flash-off');
+      setFlashIconColor('#888');
+    } else {
+      setFlashMode('auto');
+      setFlashIconName('flash-auto');
+      setFlashIconColor('#fff')
+    }
   };
 
   async function uploadImageToSupabase(uri) {
@@ -62,8 +71,17 @@ export default function CameraScreen({ navigation }) {
 
   async function quandoPressionaObturador() {
     if (cameraRef.current && !uploading) {
-      const foto = await cameraRef.current.takePictureAsync();
-      await uploadImageToSupabase(foto.uri);
+      const foto = await cameraRef.current.takePictureAsync({ exif: true });
+      setFotoUri(foto.uri);
+    }
+  }
+
+  async function handleUpload() {
+    try {
+      await uploadImageToSupabase(fotoUri);
+      setFotoUri(null);
+    } catch (err) {
+      console.log("Upload failed: ", err);
     }
   }
 
@@ -83,37 +101,48 @@ export default function CameraScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
-      <CameraView ref={cameraRef} style={styles.camera} facing="back" flashMode={flashMode} />
+    fotoUri ? (
+      <ImagePreview
+        fotoUri={fotoUri}
+        close={() => setFotoUri(null)}
+        confirm={handleUpload}
+      />
+    ) : (
+      <View style={styles.container}>
+        <CameraView ref={cameraRef} style={styles.camera} facing="back" flashMode={flashMode} />
 
-      <TouchableOpacity
-        style={styles.flashButton}
-        onPress={toggleFlashMode}
-        activeOpacity={0.7}
-      >
-        <AntDesign name="flashlight" size={24} color={getFlashIconColor()} />
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.flashButton}
+          onPress={toggleFlashMode}
+          activeOpacity={0.7}
+        >
+          <MaterialIcons
+            name={flashIconName}
+            size={24}
+            color={flashIconColor}
+          />
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[styles.obturador, uploading && styles.obturadorDisabled]}
-        onPress={quandoPressionaObturador}
-        disabled={uploading}
-        activeOpacity={0.7}
-      >
-        <View style={styles.cameraBody}>
-          <View style={styles.cameraLens} />
-        </View>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.obturador, uploading && styles.obturadorDisabled]}
+          onPress={quandoPressionaObturador}
+          disabled={uploading}
+          activeOpacity={0.7}
+        >
+          <View style={styles.cameraBody}>
+            <View style={styles.cameraLens} />
+          </View>
+        </TouchableOpacity>
 
-      {uploading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={styles.loadingText}>Salvando foto...</Text>
-        </View>
-      )}
-    </View>
-  );
-}
+        {uploading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#fff" />
+            <Text style={styles.loadingText}>Salvando foto...</Text>
+          </View>
+        )}
+      </View>
+    ))
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -216,5 +245,47 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  previewContainer: {
+    flex: 1,
+    backgroundColor: 'black',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    // ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  confirmButton: {
+    position: 'absolute',
+    bottom: 50,
+    backgroundColor: '#007AFF', // Standard iOS Blue (change to match your app)
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 30,
+    alignSelf: 'center',
+    zIndex: 10,
+  },
+  confirmText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
