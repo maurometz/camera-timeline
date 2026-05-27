@@ -17,6 +17,27 @@ function EmptyState() {
   );
 }
 
+const STORAGE_BUCKET = 'fotos_timeline';
+
+function getStoragePathFromPublicUrl(publicUrl) {
+  const { pathname } = new URL(publicUrl);
+  const bucketMarker = `/${STORAGE_BUCKET}/`;
+  const bucketIndex = pathname.indexOf(bucketMarker);
+
+  if (bucketIndex === -1) {
+    throw new Error('URL da imagem nao pertence ao bucket esperado.');
+  }
+
+  const encodedPath = pathname.slice(bucketIndex + bucketMarker.length);
+  const filePath = decodeURIComponent(encodedPath);
+
+  if (!filePath) {
+    throw new Error('Nao foi possivel identificar o arquivo da imagem.');
+  }
+
+  return filePath;
+}
+
 export default function TimelineScreen() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -76,21 +97,30 @@ export default function TimelineScreen() {
     try {
       setSaving(true);
       
-      const urlParts = selectedEntry.image_url.split('/');
-      const filePath = urlParts[urlParts.length - 1];
+      const filePath = getStoragePathFromPublicUrl(selectedEntry.image_url);
       
-      const { error: storageError } = await supabase.storage
-        .from('fotos_timeline')
+      const { data: removedFiles, error: storageError } = await supabase.storage
+        .from(STORAGE_BUCKET)
         .remove([filePath]);
 
-      if (storageError) throw storageError;
+      if (storageError) {
+        console.error('Erro ao remover imagem do Storage:', storageError);
+        throw storageError;
+      }
+
+      if (!removedFiles || removedFiles.length === 0) {
+        throw new Error('Nenhum arquivo foi removido do Storage. Verifique a policy de DELETE do bucket.');
+      }
 
       const { error: dbError } = await supabase
         .from('timeline_entries')
         .delete()
         .eq('id', selectedEntry.id);
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Erro ao deletar registro da timeline:', dbError);
+        throw dbError;
+      }
 
       setEntries(prev => prev.filter(item => item.id !== selectedEntry.id));
       closeModal();
